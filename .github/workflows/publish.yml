@@ -1,0 +1,48 @@
+name: Build Typst resumes
+
+on:
+  # Allows running this workflow from GitHub Actions tab
+  workflow_dispatch:
+
+  # Run workflow when it or resume is updated
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/publish.yml"
+      - "lib/*.typ"
+      - "src/*.typ"
+
+env:
+  AUTHOR: Your_Name
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Typst
+        uses: typst-community/setup-typst@v4
+      - name: Compile Typst files
+        run: |
+          mkdir -p build
+          for file in src/*.typ; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file" .typ)
+              typst compile --root ./ --font-path ./fonts "$file" "build/Resume_${{ env.AUTHOR }}_(${filename}).pdf"
+            fi
+          done
+      - name: Publish Site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./build"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
